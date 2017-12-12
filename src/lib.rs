@@ -1,3 +1,5 @@
+extern crate hacl_star_sys;
+
 #[cfg(test)]
 mod tests {
     #[test]
