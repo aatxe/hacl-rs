@@ -1,3 +1,5 @@
 /target/
 **/*.rs.bk
 Cargo.lock
+hacl-star-sys/target/
+hacl-star-sys/Cargo.lock

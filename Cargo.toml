@@ -1,6 +1,8 @@
 [package]
 name = "hacl"
 version = "0.1.0"
+description = "Rusty bindings to HACL*, a formally verified cryptographic library written in F*"
 authors = ["Aaron Weiss <awe@pdgn.co>"]
+license = "MPL-2.0"
 
 [dependencies]

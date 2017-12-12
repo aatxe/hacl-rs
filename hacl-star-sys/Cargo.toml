@@ -1,0 +1,9 @@
+[package]
+name = "hacl-star-sys"
+version = "0.1.0"
+description = "Low-level bindings to HACL*, a formally verified cryptographic library written in F*"
+authors = ["Aaron Weiss <awe@pdgn.co>"]
+license = "MPL-2.0"
+
+[build-dependencies]
+cc = "1.0"
