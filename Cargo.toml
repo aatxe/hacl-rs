@@ -1,0 +1,6 @@
+[package]
+name = "hacl"
+version = "0.1.0"
+authors = ["Aaron Weiss <awe@pdgn.co>"]
+
+[dependencies]
