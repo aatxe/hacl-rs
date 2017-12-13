@@ -19,15 +19,20 @@ const CRYPTO_SECRETBOX_NONCE_SIZE: usize = 24;
 const CRYPTO_SECRETBOX_MACBYTES: usize = 16;
 
 /// A cryptographic key, public or private.
+#[derive(Debug)]
 pub struct Key {
     inner: Vec<u8>,
 }
 
 impl Key {
+    pub fn new_keypair() -> crypto::Result<(Key, Key)> {
+        crypto_box_keypair()
+    }
+
     /// Creates a new empty key with the internal capacity set to the given size.
     fn empty(size: usize) -> Key {
         Key {
-            inner: Vec::with_capacity(size),
+            inner: vec![0; size],
         }
     }
 
@@ -51,13 +56,13 @@ impl Key {
 /// (public key, secret key).
 pub fn crypto_box_keypair() -> crypto::Result<(Key, Key)> {
     Key::random(CRYPTO_BOX_SECRET_KEY_SIZE).map(|secret_key| {
-        let public_key = Key::empty(CRYPTO_BOX_PUBLIC_KEY_SIZE);
+        let mut public_key = Key::empty(CRYPTO_BOX_PUBLIC_KEY_SIZE);
         let mut basepoint = [0; 32];
         basepoint[0] = 9;
 
         unsafe {
             hacl::Hacl_Curve25519_crypto_scalarmult(
-                public_key.inner.as_ptr(),
+                public_key.inner.as_mut_ptr(),
                 secret_key.inner.as_ptr(),
                 basepoint.as_ptr(),
             )
@@ -68,19 +73,27 @@ pub fn crypto_box_keypair() -> crypto::Result<(Key, Key)> {
 }
 
 /// A message, cleartext or encrypted.
+#[derive(Debug, PartialEq, Eq)]
 pub struct Message {
     inner: Vec<u8>,
 }
 
 impl Message {
+    fn from_bytes(bytes: &[u8]) -> Message {
+        Message {
+            inner: bytes.to_owned(),
+        }
+    }
+
     fn empty(size: usize) -> Message {
         Message {
-            inner: Vec::with_capacity(size),
+            inner: vec![0; size],
         }
     }
 }
 
 /// A cryptographic nonce, and as such, should only be used once.
+#[derive(Clone, Debug)]
 pub struct Nonce {
     inner: Vec<u8>,
 }
@@ -103,14 +116,14 @@ pub fn crypto_box(message: &Message, nonce: Nonce, public_key: &Key, secret_key:
     assert_eq!(secret_key.size(), CRYPTO_BOX_SECRET_KEY_SIZE);
     assert_eq!(public_key.size(), CRYPTO_BOX_PUBLIC_KEY_SIZE);
     assert_eq!(nonce.inner.len(), CRYPTO_BOX_NONCE_SIZE);
-    let ciphertext = Message::empty(message.inner.len());
+    let mut ciphertext = Message::empty(message.inner.len() + 2 * CRYPTO_BOX_MACBYTES);
 
     unsafe {
         let res = hacl::NaCl_crypto_box_easy(
-            ciphertext.inner.as_ptr(),
+            ciphertext.inner.as_mut_ptr(),
             message.inner.as_ptr(),
             // TODO: figure out why they subtract 32 in hacl-c? I think it's related to zero-padding
-            message.inner.len() as u64 - 32,
+            message.inner.len() as u64,
             nonce.inner.as_ptr(),
             public_key.inner.as_ptr(),
             secret_key.inner.as_ptr(),
@@ -131,14 +144,14 @@ pub fn crypto_box_open(
     assert_eq!(secret_key.size(), CRYPTO_BOX_SECRET_KEY_SIZE);
     assert_eq!(public_key.size(), CRYPTO_BOX_PUBLIC_KEY_SIZE);
     assert_eq!(nonce.inner.len(), CRYPTO_BOX_NONCE_SIZE);
-    let message = Message::empty(ciphertext.inner.len());
+    let mut message = Message::empty(ciphertext.inner.len());
 
     unsafe {
         let res = hacl::NaCl_crypto_box_open_easy(
-            message.inner.as_ptr(),
+            message.inner.as_mut_ptr(),
             ciphertext.inner.as_ptr(),
             // TODO: figure out why they subtract 32 in hacl-c? I think it's related to zero-padding
-            ciphertext.inner.len() as u64 - 32,
+            ciphertext.inner.len() as u64,
             nonce.inner.as_ptr(),
             public_key.inner.as_ptr(),
             secret_key.inner.as_ptr(),
@@ -153,16 +166,19 @@ pub fn crypto_box_open(
 }
 
 /// A cryptobox abstraction for authenticated encryption.
+#[derive(Debug)]
 pub struct CryptoBox {
     beforenm_key: Key,
 }
 
 pub fn crypto_box_beforenm(public_key: Key, secret_key: Key) -> CryptoBox {
-    let beforenm_key = Key::empty(CRYPTO_BOX_BEFORENM_SIZE);
+    assert_eq!(secret_key.size(), CRYPTO_BOX_SECRET_KEY_SIZE);
+    assert_eq!(public_key.size(), CRYPTO_BOX_PUBLIC_KEY_SIZE);
+    let mut beforenm_key = Key::empty(CRYPTO_BOX_BEFORENM_SIZE);
 
     unsafe {
         let res = hacl::NaCl_crypto_box_beforenm(
-            beforenm_key.inner.as_ptr(),
+            beforenm_key.inner.as_mut_ptr(),
             public_key.inner.as_ptr(),
             secret_key.inner.as_ptr(),
         );
@@ -178,11 +194,11 @@ pub fn crypto_box_beforenm(public_key: Key, secret_key: Key) -> CryptoBox {
 pub fn crypto_box_afternm(message: &Message, nonce: Nonce, cbox: &CryptoBox) -> Message {
     assert_eq!(cbox.beforenm_key.size(), CRYPTO_BOX_BEFORENM_SIZE);
     assert_eq!(nonce.inner.len(), CRYPTO_BOX_NONCE_SIZE);
-    let ciphertext = Message::empty(message.inner.len());
+    let mut ciphertext = Message::empty(message.inner.len() + 2 * CRYPTO_BOX_MACBYTES);
 
     unsafe {
         let res = hacl::NaCl_crypto_box_easy_afternm(
-            ciphertext.inner.as_ptr(),
+            ciphertext.inner.as_mut_ptr(),
             message.inner.as_ptr(),
             message.inner.len() as u64,
             nonce.inner.as_ptr(),
@@ -200,11 +216,11 @@ pub fn crypto_box_open_afternm(
 ) -> crypto::Result<Message> {
     assert_eq!(cbox.beforenm_key.size(), CRYPTO_BOX_BEFORENM_SIZE);
     assert_eq!(nonce.inner.len(), CRYPTO_BOX_NONCE_SIZE);
-    let message = Message::empty(ciphertext.inner.len());
+    let mut message = Message::empty(ciphertext.inner.len());
 
     unsafe {
         let res = hacl::NaCl_crypto_box_open_easy_afternm(
-            message.inner.as_ptr(),
+            message.inner.as_mut_ptr(),
             ciphertext.inner.as_ptr(),
             ciphertext.inner.len() as u64,
             nonce.inner.as_ptr(),
@@ -224,11 +240,58 @@ impl CryptoBox {
         crypto_box_beforenm(public_key, secret_key)
     }
 
-    pub fn apply(&self, message: &Message, nonce: Nonce) -> Message {
+    pub fn seal(&self, message: &Message, nonce: Nonce) -> Message {
         crypto_box_afternm(message, nonce, self)
     }
 
     pub fn open(&self, ciphertext: &Message, nonce: Nonce) -> crypto::Result<Message> {
         crypto_box_open_afternm(ciphertext, nonce, self)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn one_time_crypto_box_aead() {
+        let (alice_public_key, alice_secret_key) = Key::new_keypair().unwrap();
+        println!("A: {:?} {:?}", alice_public_key, alice_secret_key);
+        let (bob_public_key, bob_secret_key) = Key::new_keypair().unwrap();
+        println!("B: {:?} {:?}", bob_public_key, bob_secret_key);
+
+        let message = Message::from_bytes(b"Hello, Bob");
+        println!("M: {:?}", message);
+        let nonce = Nonce::random(CRYPTO_BOX_NONCE_SIZE).unwrap();
+        println!("N: {:?}", nonce);
+        let ciphertext = crypto_box(&message, nonce.clone(), &bob_public_key, &alice_secret_key);
+        println!("C: {:?}", ciphertext);
+        let verified_message = crypto_box_open(
+            &ciphertext, nonce, &alice_public_key, &bob_secret_key
+        ).unwrap();
+
+        assert_eq!(message, verified_message);
+    }
+
+    #[test]
+    fn crypto_box_aead() {
+        let (alice_public_key, alice_secret_key) = Key::new_keypair().unwrap();
+        println!("A: {:?} {:?}", alice_public_key, alice_secret_key);
+        let (bob_public_key, bob_secret_key) = Key::new_keypair().unwrap();
+        println!("B: {:?} {:?}", bob_public_key, bob_secret_key);
+        let alice_box = CryptoBox::new(bob_public_key, alice_secret_key);
+        println!("AB: {:?}", alice_box);
+        let bob_box = CryptoBox::new(alice_public_key, bob_secret_key);
+        println!("BB: {:?}", bob_box);
+
+        let message = Message::from_bytes(b"Hello, Bob");
+        println!("M: {:?}", message);
+        let nonce = Nonce::random(CRYPTO_BOX_NONCE_SIZE).unwrap();
+        println!("N: {:?}", nonce);
+        let ciphertext = alice_box.seal(&message, nonce.clone());
+        println!("C: {:?}", &ciphertext);
+        let verified_message = bob_box.open(&ciphertext, nonce).unwrap();
+
+        assert_eq!(message, verified_message);
     }
 }
