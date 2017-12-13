@@ -11,6 +11,7 @@ fn main() {
     // TODO: -DKRML_NOUNIT128 on 64-bit MSVC and all 32-bit systems
 
     cc::Build::new()
+        .flag_if_supported("-std=c11")
         .file("hacl-star/snapshots/hacl-c/kremlib.c")
         .file("hacl-star/snapshots/hacl-c/FStar.c")
         .file("hacl-star/snapshots/hacl-c/Hacl_Policies.c")
