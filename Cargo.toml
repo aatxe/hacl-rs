@@ -6,4 +6,6 @@ authors = ["Aaron Weiss <awe@pdgn.co>"]
 license = "MPL-2.0"
 
 [dependencies]
+failure = "0.1"
 hacl-star-sys = { path = "hacl-star-sys", version = "0.1.0" }
+rand = "0.3"

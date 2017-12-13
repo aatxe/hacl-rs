@@ -1,9 +1,11 @@
-extern crate hacl_star_sys;
+//! Type-safe, verified cryptography for Rust.
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
-}
+#![warn(missing_docs)]
+
+#[macro_use]
+extern crate failure;
+extern crate hacl_star_sys;
+extern crate rand;
+
+pub mod error;
+pub mod nacl;
