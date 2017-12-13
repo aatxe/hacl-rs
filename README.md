@@ -2,4 +2,4 @@
 
 An effort to build high-level Rust abstractions that use types to enforce the correct usage of verified crypto primitives from [HACL*](https://github.com/mitls/hacl-star).
 
-**NOTE**: This library is still very much a working target, and probably shouldn't be used yet. If you're interested in working on it with me, you can email me, find me on Mozilla IRC, or open an issue.
+**NOTE**: This library is still very much a working target, and probably shouldn't be used yet. If you're interested in working on it with me, you can [email me](mailto:awe@pdgn.co), find me on Mozilla IRC (as awe), or open an issue.
