@@ -29,7 +29,7 @@ extern {
 extern {
     pub fn Hacl_EC_crypto_scalarmult(mypublic: *const u8, secret: *const u8, basepoint: *const u8);
 
-    pub fn Hacl_Curve22519_crypto_scalarmult(
+    pub fn Hacl_Curve25519_crypto_scalarmult(
         mypublic: *const u8, secret: *const u8, basepoint: *const u8,
     );
 }
