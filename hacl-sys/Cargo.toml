@@ -1,12 +1,12 @@
 [package]
-name = "hacl-star-sys"
+name = "hacl-sys"
 version = "0.1.0"
 description = "Low-level bindings to HACL*, a formally verified cryptographic library written in F*"
 authors = ["Aaron Weiss <awe@pdgn.co>"]
 license = "MPL-2.0"
 
 [lib]
-name = "hacl_star_sys"
+name = "hacl_sys"
 path = "lib.rs"
 
 [build-dependencies]

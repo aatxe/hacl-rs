@@ -4,7 +4,7 @@
 
 #[macro_use]
 extern crate failure;
-extern crate hacl_star_sys;
+extern crate hacl_sys;
 extern crate rand;
 
 pub mod error;

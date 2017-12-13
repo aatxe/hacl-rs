@@ -1,6 +1,6 @@
 //! A type-safe, oxidized version of the NaCl API.
 
-use hacl_star_sys as hacl;
+use hacl_sys as hacl;
 use rand::Rng;
 use rand::os::OsRng;
 
