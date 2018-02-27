@@ -280,6 +280,8 @@ mod test {
         let alice_box = CryptoBox::new(bob_public_key, alice_secret_key);
         let bob_box = CryptoBox::new(alice_public_key, bob_secret_key);
 
+        println!("alice: {:?}", alice_box);
+        println!("bob: {:?}", bob_box);
         let message = Message::from_bytes(b"Hello, Bob");
         println!("M: {:?}", message);
         let nonce = Nonce::random(CRYPTO_BOX_NONCE_SIZE).unwrap();

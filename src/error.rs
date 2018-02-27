@@ -4,7 +4,7 @@ use failure::Error;
 
 #[derive(Debug, Fail)]
 pub enum CryptoError {
-    #[fail(display = "failed to verify ")]
+    #[fail(display = "failed to verify")]
     VerificationFailed,
 }
 
